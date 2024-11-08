@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  wordpress:
+    build:
+      context: .  # Sử dụng Dockerfile trong thư mục hiện tại
+    container_name: wordpress_apache
+    ports:
+      - "8080:80"  # Mở cổng 8080 cho việc truy cập WordPress
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress_user
+      WORDPRESS_DB_PASSWORD: wordpress_password
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./src:/var/www/html  # Gắn thư mục src vào thư mục wp-content của container
+      - ./docker/config/apache2/000-default.conf:/etc/apache2/sites-available/000-default.conf  # Đảm bảo đúng đường dẫn
+      - ./docker/config/php/php.ini:/usr/local/etc/php/php.ini  # Đảm bảo đúng đường dẫn
+    restart: always
+
+  db:
+    image: mysql:5.7  # Sử dụng image MySQL 5.7
+    container_name: wordpress_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: example_root_password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress_user
+      MYSQL_PASSWORD: wordpress_password
+    volumes:
+      - db_data:/var/lib/mysql  # Lưu trữ dữ liệu MySQL ngoài container
+    restart: always
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin  # Sử dụng image phpMyAdmin chính thức
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: db  # Tên của dịch vụ cơ sở dữ liệu trong docker-compose
+      PMA_USER: wordpress_user
+      PMA_PASSWORD: wordpress_password
+    ports:
+      - "8081:80"  # Mở cổng 8081 để truy cập phpMyAdmin
+    depends_on:
+      - db  # Đảm bảo dịch vụ db đã sẵn sàng trước khi khởi chạy phpMyAdmin
+    restart: always
+
+volumes:
+  db_data:  # Định nghĩa volume cho MySQL
